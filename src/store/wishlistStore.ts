@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { api } from '../lib/api';
+import { mockProducts } from '../lib/mockData';
 
 export interface WishlistItem {
   id: number;
@@ -31,45 +31,39 @@ export const useWishlistStore = create<WishlistStore>((set, get) => ({
   loading: false,
 
   fetchWishlist: async () => {
-    set({ loading: true });
-    try {
-      const data = await api.getWishlist();
-      set({ items: data.items });
-    } catch {
-      set({ items: [] });
-    } finally {
-      set({ loading: false });
-    }
+    set({ loading: false });
   },
 
   toggleWishlist: async (productId) => {
-    const data = await api.toggleWishlist(productId);
-    if (data.wishlisted) {
-      const product = await api.getProductById(productId);
-      set((state) => ({
-        items: [{
-          id: product.id,
-          product_id: product.id,
-          name: product.name,
-          name_ar: product.name_ar,
-          price: product.price,
-          compare_price: product.compare_price,
-          images: product.images,
-          stock: product.stock,
-          slug: product.slug,
-          rating: product.rating,
-          reviews_count: product.reviews_count,
-          category_name: product.category_name,
-          category_slug: product.category_slug,
-          created_at: new Date().toISOString(),
-        }, ...state.items],
-      }));
-    } else {
+    const isWishlisted = get().items.some((i) => i.product_id === productId);
+    if (isWishlisted) {
       set((state) => ({
         items: state.items.filter((i) => i.product_id !== productId),
       }));
+      return false;
+    } else {
+      const product = mockProducts.find((p) => p.id === productId);
+      if (!product) return false;
+      const images = typeof product.images === 'string' ? product.images : JSON.stringify(product.images);
+      const item: WishlistItem = {
+        id: Date.now(),
+        product_id: product.id,
+        name: product.name,
+        name_ar: product.name_ar,
+        price: product.price,
+        compare_price: product.compare_price,
+        images,
+        stock: product.stock,
+        slug: product.slug,
+        rating: product.rating,
+        reviews_count: product.reviews_count,
+        category_name: product.category_name,
+        category_slug: product.category_slug,
+        created_at: new Date().toISOString(),
+      };
+      set((state) => ({ items: [item, ...state.items] }));
+      return true;
     }
-    return data.wishlisted;
   },
 
   isWishlisted: (productId) => {

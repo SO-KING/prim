@@ -1,3 +1,12 @@
+import {
+  mockCategories,
+  mockProducts,
+  mockReviews,
+  getMockFeatured,
+  getMockProducts,
+  getMockProductBySlug,
+} from './mockData';
+
 const API_URL = '/api';
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -38,18 +47,19 @@ export const api = {
   updateProfile: (data: { name?: string; phone?: string; address?: string }) =>
     request<{ user: any }>('/auth/profile', { method: 'PUT', body: JSON.stringify(data) }),
 
-  // Products
-  getProducts: (params?: Record<string, string>) => {
-    const query = params ? '?' + new URLSearchParams(params).toString() : '';
-    return request<{ products: any[]; pagination: any }>(`/products${query}`);
-  },
+  // Products (local mock data - no server needed)
+  getProducts: (params?: Record<string, string>) =>
+    Promise.resolve(getMockProducts(params || {})),
 
-  getFeaturedProducts: () => request<{ products: any[] }>('/products/featured'),
+  getFeaturedProducts: () =>
+    Promise.resolve({ products: getMockFeatured() }),
 
-  getProduct: (slug: string) => request<{ product: any; reviews: any[]; related: any[] }>(`/products/${slug}`),
+  getProduct: (slug: string) =>
+    Promise.resolve(getMockProductBySlug(slug)),
 
-  // Categories
-  getCategories: () => request<{ categories: any[] }>('/categories'),
+  // Categories (local mock data - no server needed)
+  getCategories: () =>
+    Promise.resolve({ categories: mockCategories }),
 
   // Cart
   getCart: () => request<{ items: any[]; total: number }>('/cart'),
@@ -91,7 +101,7 @@ export const api = {
     request<{ wishlisted: boolean }>(`/wishlist/check/${product_id}`),
 
   getProductById: (id: number) =>
-    request<{ product: any }>(`/products/id/${id}`).then((d) => d.product),
+    Promise.resolve(mockProducts.find((p) => p.id === id) || null),
 
   // Admin
   getAdminStats: () => request<{ stats: any; recentOrders: any[]; ordersByStatus: any[]; lowStock: any[] }>('/admin/stats'),
